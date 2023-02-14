@@ -1,0 +1,89 @@
+FROM ubuntu:20.04 AS ubuntudock
+
+# Prepare environment
+ENV DEBIAN_FRONTEND=noninteractive \
+    TZ=Europe/Brussels
+
+ENV FSLDIR="/opt/fsl-6.0.5.1" \
+    PATH="/opt/fsl-6.0.5.1/bin:$PATH" \
+    FSLOUTPUTTYPE="NIFTI_GZ" \
+    FSLMULTIFILEQUIT="TRUE" \
+    FSLTCLSH="/opt/fsl-6.0.5.1/bin/fsltclsh" \
+    FSLWISH="/opt/fsl-6.0.5.1/bin/fslwish" \
+    FSLLOCKDIR="" \
+    FSLMACHINELIST="" \
+    FSLREMOTECALL="" \
+    FSLGECUDAQ="cuda.q"
+
+RUN apt-get update -qq \
+    && apt-get install -y -q --no-install-recommends \
+            bc \
+            build-essential \
+            ca-certificates \
+            curl \
+            dc \
+            dirmngr \
+            file \
+            g++ \
+            gcc \
+            git \
+            gnupg \
+            libfontconfig1 \
+            libfreetype6 \
+            libgl1-mesa-dev \
+            libgl1-mesa-dri \
+            libglu1-mesa-dev \
+            libgomp1 \
+            libice6 \
+            libopenblas-base \
+            libxcursor1 \
+            libxft2 \
+            libxinerama1 \
+            libxrandr2 \
+            libxrender1 \
+            libxt6 \
+            less \
+            make \
+            nano \
+            sudo \
+            wget \
+            python3-distutils \
+            python3-pip \
+            python3-rpy2 \
+            python-is-python3 \
+    && rm -rf /var/lib/apt/lists/* \
+    && echo "Downloading FSL ..." \
+    && mkdir -p /opt/fsl-6.0.5.1 \
+    && curl -fL https://fsl.fmrib.ox.ac.uk/fsldownloads/fsl-6.0.5.1-centos7_64.tar.gz \
+    | tar -xz -C /opt/fsl-6.0.5.1 --strip-components 1 \
+    && echo "Installing FSL conda environment ..." \
+    && bash /opt/fsl-6.0.5.1/etc/fslconf/fslpython_install.sh -f /opt/fsl-6.0.5.1
+
+RUN pip3 install pip==22.3.1 setuptools==65.5.1 wheel==0.38.4
+
+RUN pip3 install annexremote==1.6.0 \
+    datalad==0.17.10 \
+    fsleyes==1.5.0 \
+    fsleyes-props==1.8.2 \
+    fsleyes-widgets==0.12.3 \
+    fslpy==3.10.0 \
+    ipython \
+    h5py==3.7.0 \
+    matplotlib==3.6.2 \
+    nibabel==4.0.2 \
+    nilearn==0.10.0 \
+    numpy==1.23.5 \
+    pandas==1.5.2
+
+RUN ln -s /opt/fsl-6.0.5.1/bin/eddy_cuda9.1 /opt/fsl-6.0.5.1/bin/eddy_cuda
+
+ENV FSLOUTPUTTYPE="NIFTI_GZ"
+
+RUN apt-get update -qq \
+           && apt-get install -y -q --no-install-recommends \
+                  locales \
+           && rm -rf /var/lib/apt/lists/*
+
+RUN sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && locale-gen
+
+CMD source ${FSLDIR}/etc/fslconf/fsl.sh; fslmaths

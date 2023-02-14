@@ -1,0 +1,82 @@
+Bootstrap: docker
+From: ubuntu:20.04
+
+%environment
+export DEBIAN_FRONTEND=noninteractive
+export TZ=Europe/Brussels
+export FSLDIR="/opt/fsl-6.0.6.2"
+source ${FSLDIR}/etc/fslconf/fsl.sh
+export FSLOUTPUTTYPE="NIFTI_GZ"
+export FSLMULTIFILEQUIT="TRUE"
+export FSLTCLSH="$FSLDIR/bin/fsltclsh"
+export FSLWISH="$FSLDIR/bin/fslwish"
+export FSLLOCKDIR=""
+export FSLMACHINELIST=""
+export FSLREMOTECALL=""
+export FSLGECUDAQ="cuda.q"
+export PATH="$FSLDIR/bin:$PATH"
+
+
+%post
+# Set install variables, create tmp folder
+export DEBIAN_FRONTEND=noninteractive
+export TZ=Europe/Brussels
+# Prepare repos and install dependencies
+apt update -qq
+apt install -y -q --no-install-recommends \
+    bc \
+    build-essential \
+    ca-certificates \
+    curl \
+    dc \
+    dirmngr \
+    file \
+    g++ \
+    gcc \
+    git \
+    less \
+    make \
+    nano \
+    sudo \
+    wget \
+    python3-distutils \
+    python3-pip \
+    python3-rpy2 \
+    python-is-python3
+
+# Install FSL
+mkdir -p ${TMPDIR}/fsl
+cd ${TMPDIR}/fsl || exit 1
+curl -fL https://fsl.fmrib.ox.ac.uk/fsldownloads/fslinstaller.py --output ./fslinstaller.py
+chmod +x fslinstaller.py
+python3 fslinstaller.py -d /opt/fsl-6.0.6.2 -V 6.0.6.2
+# echo "Installing FSL conda environment ..."
+# bash /opt/fsl-6.0.6.2/etc/fslconf/fslpython_install.sh -f /opt/fsl-6.0.6.2
+cd ${TMPDIR} || exit 1
+rm -rf ${TMPDIR}/fsl
+
+# Install PYTHON things.
+pip3 install pip==22.3.1 setuptools==65.5.1 wheel==0.38.4
+
+# Install datalad, fsleyes, nilearn, peakdet, phys2cvr.
+pip3 install \
+    annexremote==1.6.0 \
+    datalad==0.17.10 \
+    fsleyes==1.5.0 \
+    fsleyes-props==1.8.2 \
+    fsleyes-widgets==0.12.3 \
+    fslpy==3.10.0 \
+    ipython \
+    h5py==3.7.0 \
+    matplotlib==3.6.2 \
+    nibabel==4.0.2 \
+    nilearn==0.10.0 \
+    numpy==1.23.5 \
+    pandas==1.5.2
+
+# Final removal of lists and cleanup
+rm -rf /var/lib/apt/lists/*
+
+%runscript
+fslmaths
+
