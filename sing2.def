@@ -58,6 +58,9 @@ rm -rf ${TMPDIR}/fsl
 # Install PYTHON things.
 pip3 install pip==22.3.1 setuptools==65.5.1 wheel==0.38.4
 
+# Install wxPython in a particular way.
+pip3 install --no-cache -f https://extras.wxpython.org/wxPython4/extras/linux/gtk3/ubuntu-20.04 wxpython==4.2.0
+
 # Install datalad, fsleyes, nilearn, peakdet, phys2cvr.
 pip3 install \
     annexremote==1.6.0 \
